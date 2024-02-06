@@ -1,5 +1,5 @@
 function serialize(object) {
-  return "";
+  return '';
 }
 
 function deserialize(string) {
@@ -8,6 +8,6 @@ function deserialize(string) {
 
 module.exports = {
   serialize: serialize,
-  deserialize: deserialize
+  deserialize: deserialize,
 };
 
