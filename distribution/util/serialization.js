@@ -41,11 +41,16 @@ function serialize(object) {
     }
   } else {
     // handle for maps
+    // handle the functions and other cases inside all the replacer
   }
   try {
     objStr = JSON.stringify(object, function(key, value) {
       if (typeof value === 'function') {
-        return '#$funcDef$#:'+value.toString();
+        if (value.toString().indexOf('[native code]') !== -1) {
+          return '#$nativeFunc$#:'+Reflect.get(value, 'name');
+        } else {
+          return '#$funcDef$#:'+value.toString();
+        }
       }
       return value;
     });
@@ -83,7 +88,7 @@ function deserialize(string) {
   // visited.set(obj, 0);
   function reviver(key, value) {
     if (typeof value === 'object') {
-      if ('#_#Cycle' in value) {
+      if (value!==null && '#_#Cycle' in value) {
         if (value['#_#Cycle']===0) {
           return this;
         }
