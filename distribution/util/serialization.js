@@ -34,7 +34,11 @@ function serialize(object) {
     // console.log('error serialized : '+errorProxy.serialize);
     return dateProxy.serialize;
   } else if (typeof object === 'function') {
-    object = '#$funcDef$#:'+object.toString();
+    if (object.toString().indexOf('[native code]') !== -1) {
+      object = '#$nativeFunc$#:'+Reflect.get(object, 'name');
+    } else {
+      object = '#$funcDef$#:'+object.toString();
+    }
   } else {
     // handle for maps
   }
@@ -89,6 +93,8 @@ function deserialize(string) {
     }
     if (typeof value==='string' && value.startsWith('#$funcDef$#:')) {
       return eval(value.split('#$funcDef$#:')[1]);
+    } else if (typeof value==='string' && value.startsWith('#$nativeFunc$#:')) {
+      return findNativeFunc(global, value.split('#$nativeFunc$#:')[1]);
     }
     return value;
   }
@@ -114,6 +120,32 @@ function deserialize(string) {
     }
   }*/
   return obj;
+}
+
+function findNativeFunc(obj, functionName, visited= new Set()) {
+  if (obj!==null && obj!==undefined) {
+    if (visited.has(obj)) {
+      return undefined;
+    }
+    visited.add(obj);
+    if (typeof obj === 'object' && obj.hasOwnProperty &&
+                                  obj.hasOwnProperty(functionName) &&
+                                  typeof obj[functionName] === 'function') {
+      return obj[functionName];
+    }
+    if (typeof obj === 'object') {
+      for (const key in obj) {
+        if (obj.hasOwnProperty && obj.hasOwnProperty(key) &&
+                                  typeof obj[key] === 'object') {
+          const result = findNativeFunc(obj[key], functionName, visited);
+          if (result !== undefined) {
+            return result;
+          }
+        }
+      }
+    }
+  }
+  return undefined;
 }
 
 module.exports = {
