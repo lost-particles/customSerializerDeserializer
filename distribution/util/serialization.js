@@ -44,7 +44,21 @@ function serialize(object) {
     // handle the functions and other cases inside all the replacer
   }
   try {
-    objStr = JSON.stringify(object, function(key, value) {
+    const visited = new Map();
+    function replacer(key, value) {
+      if (typeof value === 'object' && value !== null) {
+        if (visited.has(value)) {
+          return {'#_#Cycle': visited.get(value)};
+        }
+        if (value instanceof Error || value instanceof Date ||
+                              value ===undefined) {
+          nestedVal = serialize(value);
+          visited.set(value, visited.size);
+          return nestedVal;
+        }
+        visited.set(value, visited.size);
+      }
+
       if (typeof value === 'function') {
         if (value.toString().indexOf('[native code]') !== -1) {
           return '#$nativeFunc$#:'+Reflect.get(value, 'name');
@@ -52,26 +66,15 @@ function serialize(object) {
           return '#$funcDef$#:'+value.toString();
         }
       }
+
       return value;
-    });
+    }
+
+    objStr = JSON.stringify(object, replacer);
     return objStr;
   } catch (e) {
     console.log('error found is : '+ e.toString());
-    if (e.message.indexOf('Converting circular structure to JSON') !== -1) {
-      const visited = new Map();
-
-      function replacer(key, value) {
-        if (typeof value === 'object' && value !== null) {
-          if (visited.has(value)) {
-            return {'#_#Cycle': visited.get(value)};
-          }
-          visited.set(value, visited.size);
-        }
-        return value;
-      }
-      return JSON.stringify(object, replacer);
-    }
-    return '';
+    return e.toString();
   }
 }
 
@@ -117,6 +120,17 @@ function deserialize(string) {
         Reflect.set(dateObj, key, obj[key]);
       });
       return dateObj;
+    }
+  }
+
+  for (key in obj) {
+    if (key!==null && key!==undefined && obj[key]!==null &&
+                                      obj[key]!==undefined) {
+      if (obj[key]===undefined || obj[key]==='null' ||
+            typeof obj[key] === 'string' && obj[key].indexOf('objType')!==-1) {
+        nestedObj=deserialize(obj[key]);
+        obj[key]=nestedObj;
+      }
     }
   }
   /* else if (obj!==undefined && obj!==null) {
