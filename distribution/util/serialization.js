@@ -39,23 +39,40 @@ function serialize(object) {
     } else {
       object = '#$funcDef$#:'+object.toString();
     }
+  } else if (object instanceof Array) {
+
   } else if (typeof object === 'object') {
     try {
       // handle for maps
       // handle the functions and other cases inside all the replacer
+      const visited = new Map();
       const genericHandler = {
-        get(key, value) {
-          if (value === 'serialize') {
-            if (typeof value === 'function') {
-              if (value.toString().indexOf('[native code]') !== -1) {
-                return '#$nativeFunc$#:'+Reflect.get(value, 'name');
+        get(target, prop) {
+          if (prop === 'serialize') {
+            genericObj = {};
+            Reflect.ownKeys(target).forEach((key) => {
+              value = target[key];
+              if (typeof value === 'function') {
+                if (value.toString().indexOf('[native code]') !== -1) {
+                  genericObj[key] = '#$nativeFunc$#:'+
+                            Reflect.get(value, 'name');
+                } else {
+                  genericObj[key] = '#$funcDef$#:'+value.toString();
+                }
+              } else if (typeof value === 'object' && value !== null) {
+                if (visited.has(value)) {
+                  genericObj[key] = {'#_#Cycle': visited.get(value)};
+                } else {
+                  genericObj[key] = value;
+                  visited.set(value, visited.size);
+                }
               } else {
-                return '#$funcDef$#:'+value.toString();
+                genericObj[key] = value;
               }
-            }
-            return JSON.stringify(value);
+            });
+            return JSON.stringify(genericObj);
           }
-          return Reflect.get(key, value);
+          return Reflect.get(target, prop);
         },
       };
 
@@ -83,6 +100,7 @@ function serialize(object) {
   } else {
     return JSON.stringify(object);
   }
+  return JSON.stringify(object);
 }
 
 function deserialize(string) {

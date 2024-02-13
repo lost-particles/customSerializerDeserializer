@@ -1,10 +1,10 @@
 const util = require('../distribution').util;
 
 test('(0 pts) sample test', () => {
-  const number = 42;
-  const serialized = util.serialize(number);
+  const emptyObj = {};
+  const serialized = util.serialize(emptyObj);
   const deserialized = util.deserialize(serialized);
-  expect(deserialized).toBe(number);
+  expect(deserialized).toBe(emptyObj);
 });
 
 
