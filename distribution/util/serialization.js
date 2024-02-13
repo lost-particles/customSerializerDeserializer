@@ -35,9 +35,9 @@ function serialize(object) {
     return dateProxy.serialize;
   } else if (typeof object === 'function') {
     if (object.toString().indexOf('[native code]') !== -1) {
-      object = '#$nativeFunc$#:'+Reflect.get(object, 'name');
+      object = '__nativeFunc__:'+Reflect.get(object, 'name');
     } else {
-      object = '#$funcDef$#:'+object.toString();
+      object = '__funcDef__:'+object.toString();
     }
   } else {
     // handle for maps
@@ -48,7 +48,7 @@ function serialize(object) {
     function replacer(key, value) {
       if (typeof value === 'object' && value !== null) {
         if (visited.has(value)) {
-          return {'#_#Cycle': visited.get(value)};
+          return {'__Cycle__': visited.get(value)};
         }
         if (value instanceof Error || value instanceof Date ||
                               value ===undefined) {
@@ -61,9 +61,9 @@ function serialize(object) {
 
       if (typeof value === 'function') {
         if (value.toString().indexOf('[native code]') !== -1) {
-          return '#$nativeFunc$#:'+Reflect.get(value, 'name');
+          return '__nativeFunc__:'+Reflect.get(value, 'name');
         } else {
-          return '#$funcDef$#:'+value.toString();
+          return '__funcDef__:'+value.toString();
         }
       }
 
@@ -91,18 +91,18 @@ function deserialize(string) {
   // visited.set(obj, 0);
   function reviver(key, value) {
     if (typeof value === 'object') {
-      if (value!==null && '#_#Cycle' in value) {
-        if (value['#_#Cycle']===0) {
+      if (value!==null && '__Cycle__' in value) {
+        if (value['__Cycle__']===0) {
           return this;
         }
-        return visited[value['#_#Cycle']-1];
+        return visited[value['__Cycle__']-1];
       }
       visited.push(value);
     }
-    if (typeof value==='string' && value.startsWith('#$funcDef$#:')) {
-      return eval(value.split('#$funcDef$#:')[1]);
-    } else if (typeof value==='string' && value.startsWith('#$nativeFunc$#:')) {
-      return findNativeFunc(global, value.split('#$nativeFunc$#:')[1]);
+    if (typeof value==='string' && value.startsWith('__funcDef__:')) {
+      return eval(value.split('__funcDef__:')[1]);
+    } else if (typeof value==='string' && value.startsWith('__nativeFunc__:')) {
+      return findNativeFunc(global, value.split('__nativeFunc__:')[1]);
     }
     return value;
   }
@@ -134,8 +134,8 @@ function deserialize(string) {
     }
   }
   /* else if (obj!==undefined && obj!==null) {
-    if (obj.toString().indexOf('#$funcDef$#:')!==-1) {
-      return eval(obj.toString().split('#$funcDef$#:')[1]);
+    if (obj.toString().indexOf('__funcDef__:')!==-1) {
+      return eval(obj.toString().split('__funcDef__:')[1]);
     }
   }*/
   return obj;
