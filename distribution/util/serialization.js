@@ -56,7 +56,11 @@ function serialize(object) {
             genericObj = {};
             Reflect.ownKeys(target).forEach((key) => {
               value = target[key];
-              if (typeof value === 'function') {
+              if (value === null || value===undefined ||
+                value instanceof Date || value instanceof Error ||
+                            value instanceof Array) {
+                genericObj[key] = serialize(value);
+              } else if (typeof value === 'function') {
                 if (value.toString().indexOf('[native code]') !== -1) {
                   genericObj[key] = '#$nativeFunc$#:'+
                             Reflect.get(value, 'name');
@@ -115,6 +119,9 @@ function deserialize(string) {
   if (string==='null' || string===null) {
     return null;
   }
+  if (string==='{}') {
+    return {};
+  }
   let obj;
   const visited = [];
   // visited.set(obj, 0);
@@ -136,7 +143,7 @@ function deserialize(string) {
     return value;
   }
   obj = JSON.parse(string, reviver);
-  if (typeof obj === 'object' && obj!=null && Reflect.has(obj, 'objType')) {
+  if (typeof obj === 'object' && obj!==null && Reflect.has(obj, 'objType')) {
     if (obj.objType === 'Error') {
       const errorObj = new Error();
       Reflect.ownKeys(obj).filter((x) => x!=='objType').forEach((key) => {
@@ -149,6 +156,13 @@ function deserialize(string) {
         Reflect.set(dateObj, key, obj[key]);
       });
       return dateObj;
+    }
+  } else if (typeof obj==='object' && obj!==null) {
+    for (x in obj) {
+      if (x===undefined || x===null || x==='null' ||
+                  typeof obj[x] ==='object') {
+        return deserialize(obj);
+      }
     }
   }
   /* else if (obj!==undefined && obj!==null) {

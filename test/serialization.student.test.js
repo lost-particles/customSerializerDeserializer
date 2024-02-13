@@ -4,22 +4,22 @@ test('(0 pts) sample test', () => {
   const emptyObj = {};
   const serialized = util.serialize(emptyObj);
   const deserialized = util.deserialize(serialized);
-  expect(deserialized).toBe(emptyObj);
+  expect(deserialized).toEqual(emptyObj);
 });
 
 
 test('(0 pts) sample test', () => {
-  const number = 42;
-  const serialized = util.serialize(number);
+  const emptyList = [];
+  const serialized = util.serialize(emptyList);
   const deserialized = util.deserialize(serialized);
-  expect(deserialized).toBe(number);
+  expect(deserialized).toEqual(emptyList);
 });
 
 test('(0 pts) sample test', () => {
-  const number = 42;
-  const serialized = util.serialize(number);
+  const boolean = true;
+  const serialized = util.serialize(boolean);
   const deserialized = util.deserialize(serialized);
-  expect(deserialized).toBe(number);
+  expect(deserialized).toBe(boolean);
 });
 
 test('(0 pts) sample test', () => {
