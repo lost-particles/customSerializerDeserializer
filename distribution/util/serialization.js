@@ -1,6 +1,8 @@
 function serialize(object) {
   if (object===undefined) {
     object=undefined;
+  } else if (object === null) {
+    return JSON.stringify(null);
   } else if (object instanceof Error) {
     const errorHandler = {
       get(target, prop) {
@@ -45,10 +47,12 @@ function serialize(object) {
     try {
       // handle for maps
       // handle the functions and other cases inside all the replacer
-      const visited = new Map();
+
       const genericHandler = {
         get(target, prop) {
           if (prop === 'serialize') {
+            const visited = new Map();
+            visited.set(target, visited.size);
             genericObj = {};
             Reflect.ownKeys(target).forEach((key) => {
               value = target[key];
@@ -86,7 +90,7 @@ function serialize(object) {
 
         function replacer(key, value) {
           if (typeof value === 'object' && value !== null) {
-            if (visited.has(value)) {
+            if (visited.has(value) && visited.get(value)===value) {
               return {'#_#Cycle': visited.get(value)};
             }
             visited.set(value, visited.size);
