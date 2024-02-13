@@ -80,6 +80,7 @@ function serialize(object) {
 
 function deserialize(string) {
   // const genericObj = {};
+  console.log(string);
   if (string===undefined) {
     return undefined;
   }
