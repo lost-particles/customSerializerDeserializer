@@ -160,8 +160,8 @@ function deserialize(string) {
   } else if (typeof obj==='object' && obj!==null) {
     for (x in obj) {
       if (x===undefined || x===null || x==='null' ||
-                  typeof obj[x] ==='object') {
-        return deserialize(obj);
+                  typeof obj[x] ==='string') {
+        obj[x]=deserialize(obj[x]);
       }
     }
   }
