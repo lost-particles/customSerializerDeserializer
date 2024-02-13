@@ -39,39 +39,49 @@ function serialize(object) {
     } else {
       object = '#$funcDef$#:'+object.toString();
     }
-  } else {
-    // handle for maps
-    // handle the functions and other cases inside all the replacer
-  }
-  try {
-    objStr = JSON.stringify(object, function(key, value) {
-      if (typeof value === 'function') {
-        if (value.toString().indexOf('[native code]') !== -1) {
-          return '#$nativeFunc$#:'+Reflect.get(value, 'name');
-        } else {
-          return '#$funcDef$#:'+value.toString();
-        }
-      }
-      return value;
-    });
-    return objStr;
-  } catch (e) {
-    // console.log('error found is : '+ e.toString());
-    if (e.message.indexOf('Converting circular structure to JSON') !== -1) {
-      const visited = new Map();
-
-      function replacer(key, value) {
-        if (typeof value === 'object' && value !== null) {
-          if (visited.has(value)) {
-            return {'#_#Cycle': visited.get(value)};
+  } else if (typeof object === 'object') {
+    try {
+      // handle for maps
+      // handle the functions and other cases inside all the replacer
+      const genericHandler = {
+        get(key, value) {
+          if (value === 'serialize') {
+            if (typeof value === 'function') {
+              if (value.toString().indexOf('[native code]') !== -1) {
+                return '#$nativeFunc$#:'+Reflect.get(value, 'name');
+              } else {
+                return '#$funcDef$#:'+value.toString();
+              }
+            }
+            return JSON.stringify(value);
           }
-          visited.set(value, visited.size);
+          return Reflect.get(key, value);
+        },
+      };
+
+      const genericProxy = new Proxy(object, genericHandler);
+      // console.log('error serialized : '+errorProxy.serialize);
+      return genericProxy.serialize;
+    } catch (e) {
+      // console.log('error found is : '+ e.toString());
+      if (e.message.indexOf('Converting circular structure to JSON') !== -1) {
+        const visited = new Map();
+
+        function replacer(key, value) {
+          if (typeof value === 'object' && value !== null) {
+            if (visited.has(value)) {
+              return {'#_#Cycle': visited.get(value)};
+            }
+            visited.set(value, visited.size);
+          }
+          return value;
         }
-        return value;
+        return JSON.stringify(object, replacer);
       }
-      return JSON.stringify(object, replacer);
+      return '';
     }
-    return '';
+  } else {
+    return JSON.stringify(object);
   }
 }
 
